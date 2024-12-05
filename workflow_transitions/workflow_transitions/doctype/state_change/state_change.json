@@ -1,0 +1,72 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:naming_series",
+ "creation": "2024-12-05 12:19:42.969652",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "doctype_name",
+  "document_name",
+  "custom_html",
+  "items"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "{doctype_name}.-.{document_name}.-"
+  },
+  {
+   "fieldname": "doctype_name",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Doctype Name"
+  },
+  {
+   "fieldname": "document_name",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Document Name"
+  },
+  {
+   "fieldname": "custom_html",
+   "fieldtype": "HTML",
+   "label": "Custom HTML"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "State Changes",
+   "options": "State Change Items"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-12-05 13:19:43.282448",
+ "modified_by": "Administrator",
+ "module": "Workflow Transitions",
+ "name": "State Change",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
