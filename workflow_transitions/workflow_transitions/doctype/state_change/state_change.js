@@ -1,199 +1,283 @@
 frappe.ui.form.on('State Change', {
     onload: function(frm) {
-        // Function to dynamically generate status indicators based on workflow progression
-        function generateStatusIndicators(items, workflowStates, options = {}) {
-            // Default options with ability to customize
-            const defaultOptions = {
-                completedMarker: '✓',
-                currentMarker: '?',
-                rejectedMarker: '✗',
-                emptyMarker: '',
-                rejectedKeywords: ['reject', 'canceled', 'declined']
-            };
-            
-            // Merge provided options with defaults
-            const config = { ...defaultOptions, ...options };
-            
-            // Create a map of states to their progression order
-            const stateOrder = workflowStates.map(state => 
-                typeof state === 'object' ? state.state : state
-            );
-            
-            // Dynamic status generation function
-            const generateRowStatus = (row, rowIndex) => {
-                // If no workflow states or first item without state, special handling
-                if (!row?.workflow_state || 
-                    (rowIndex === 0 && !row.workflow_state)) {
-                    return stateOrder.map((state, stateIndex) => {
-                        if (stateIndex === 0) return config.completedMarker;
-                        if (stateIndex === 1) return config.currentMarker;
-                        return config.emptyMarker;
-                    });
-                }
-                
-                // Find the current state's index
-                const currentStateIndex = stateOrder.findIndex(state => 
-                    state.toLowerCase() === row.workflow_state.toLowerCase()
-                );
-                
-                // Check if the current state is rejected
-                const isRejected = config.rejectedKeywords.some(keyword => 
-                    row.workflow_state.toLowerCase().includes(keyword)
-                );
-                
-                // Generate status indicators
-                return stateOrder.map((state, stateIndex) => {
-                    // Completed states before current
-                    if (stateIndex < currentStateIndex) return config.completedMarker;
-                    
-                    // Rejected state handling
-                    if (isRejected) {
-                        return stateIndex === currentStateIndex 
-                            ? config.rejectedMarker 
-                            : config.emptyMarker;
-                    }
-                    
-                    // Current state
-                    if (stateIndex === currentStateIndex) return config.currentMarker;
-                    
-                    // Future states
-                    return config.emptyMarker;
-                });
-            };
-            
-            // Generate status for all items
-            return items.map(generateRowStatus);
-        }
+        injectWorkflowCSS();
 
-        // Fetch workflow details dynamically
-        function fetchWorkflowDetails() {
-            return new Promise((resolve, reject) => {
-                frappe.call({
-                    method: 'workflow_transitions.workflow_transitions.doc_events.workflow.get_workflow_fields',
-                    args: {
-                        doc: frm.doc.doctype_name
-                    }
-                }).then(r => {
-                    console.log("r",r)
-                    if (r.message && r.message.length > 0) {
-                        const workflowStates = r.message.map(workflow => ({
-                            state: workflow.state || "",
-                            roles: workflow.allow_edit ? [workflow.allow_edit] : [],
-                            // Add other mappings as needed
-                        }));
+        if (frm.doc.doctype_name && frm.doc.document_name) {
+            frappe.call({
+                method: "frappe.client.get",
+                args: {
+                    doctype: frm.doc.doctype_name,
+                    name: frm.doc.document_name
+                },
+                callback: function(doc_response) {
+                    if (doc_response.message) {
+                        let doc = doc_response.message;
                         
-                        resolve(workflowStates);
-                    } else {
-                        reject(new Error('No active workflow found for this document type'));
+                        frappe.call({
+                            method: "workflow_transitions.workflow_transitions.doc_events.workflow.get_workflow_transitions",
+                            args: {
+                                doc: frm.doc.doctype_name
+                            },
+                            callback: function(transition_response) {
+                                if (transition_response.message) {
+                                    let transitions = transition_response.message;
+                                    
+                                    transitions = filterTransitionsByConditions(transitions, doc);
+                                    let html = generateWorkflowHtml(transitions, frm.doc.items || []);
+                                    frm.fields_dict['custom_html'].wrapper.innerHTML = html;
+                                    initializeJsPlumb(transitions);
+                                }
+                            }
+                        });
                     }
-                }).catch(err => {
-                    console.error("Workflow Fetch Error:", err);
-                    reject(err);
-                });
+                }
             });
         }
-        // Determine current workflow state
-        function getCurrentState(frm) {
-            // Try to get the current state from different possible sources
-            if (frm.doc.workflow_state) return frm.doc.workflow_state;
-            if (frm.doc.items && frm.doc.items.length > 0) {
-                return frm.doc.items[frm.doc.items.length - 1].workflow_state || 'Draft';
-            }
-            return 'Draft';
-        }
-
-function createWorkflowVisualization(workflowStates, currentState) {
-    // Extract unique roles, ensuring the order is maintained
-    const uniqueRoles = [...new Map(
-        workflowStates.map(state => [state.roles[0], state.roles[0]])
-    ).values()];
-
-    // Generate status indicators for the current workflow
-    const statusIndicators = generateStatusIndicators(frm.doc.items, workflowStates, {
-        currentMarker: '?',
-        completedMarker: '✓',
-        rejectedMarker: '✗'
-    });
-
-    // Map indicators to unique roles
-    const levelBoxes = uniqueRoles.map((role, index) => {
-        // Find the first workflow state corresponding to this role
-        const roleStateIndex = workflowStates.findIndex(state => state.roles.includes(role));
-        const marker = roleStateIndex !== -1 ? statusIndicators[0][roleStateIndex] : '';
-
-        return `
-            <div class="level-box" style="
-                position: relative;
-                padding: 10px;
-                border: 2px solid blue;
-                border-radius: 5px;
-                margin: 0 10px;
-                flex: 1;
-                min-width: 100px;
-                text-align: center;
-            ">
-                <div style="
-                    position: absolute;
-                    top: 5px;
-                    right: 5px;
-                    font-weight: bold;
-                    font-size: 24px;
-                    color: ${marker === '✓' ? 'green' : 
-                             (marker === '?' ? 'orange' : 
-                             (marker === '✗' ? 'red' : 'blue'))}
-                ">
-                    ${marker}
-                </div>
-                <label style="display: block; margin-top: 20px;">
-                    <strong>${role}</strong><br>
-                    Level ${index + 1}
-                </label>
-            </div>
-        `;
-    }).join('');
-
-    // Create full HTML content
-    return `
-        <div style="
-            text-align: center;
-            margin-bottom: 15px;
-        ">
-            <div style="
-                display: flex;
-                justify-content: space-between;
-                flex-wrap: wrap;
-                gap: 10px;
-            ">
-                ${levelBoxes}
-            </div>
-        </div>
-    `;
-}
-
-
-        // Main function to update custom HTML
-        function updateCustomHtml() {
-            // Get current state
-            const currentState = getCurrentState(frm);
-
-            // Fetch workflow details and create visualization
-            fetchWorkflowDetails().then(workflowStates => {
-                // Generate HTML
-                const htmlContent = createWorkflowVisualization(workflowStates, currentState);
-
-                // Update the custom HTML field
-                frm.set_df_property("custom_html", "options", htmlContent);
-            }).catch(err => {
-                frappe.msgprint(__('Error processing workflow: {0}', [err]));
-            });
-        }
-
-        // Call the function to update HTML on form load
-        updateCustomHtml();
-
-        // Optional: Refresh HTML when workflow state changes
-        frm.add_custom_button(__('Refresh Workflow'), function() {
-            updateCustomHtml();
-        });
     }
 });
+
+function convertPythonCondition(condition) {
+    if (!condition) return '';
+    
+    return condition
+        .replace(/\band\b/g, '&&')
+        .replace(/\bor\b/g, '||')
+        .replace(/\bTrue\b/g, 'true')
+        .replace(/\bFalse\b/g, 'false')
+        .replace(/\bNone\b/g, 'null')
+        .replace(/\bnot\b/g, '!')
+        .replace(/(\w+)\s*==\s*"([^"]*)"/, '$1 === "$2"')
+        .replace(/(\w+)\s*==\s*(\d+)/, '$1 === $2');
+}
+
+function filterTransitionsByConditions(transitions, doc) {
+    return transitions.filter(transition => {
+        if (!transition.condition) {
+            return true;
+        }
+        
+        try {
+            let jsCondition = convertPythonCondition(transition.condition);
+            
+            let context = {
+                doc: doc,
+                frappe: frappe,
+                int: parseInt,
+                str: String,
+                float: parseFloat
+            };
+            
+            try {
+                let fn = new Function('doc', 'frappe', 'int', 'str', 'float', 
+                    `try { return ${jsCondition}; } catch (e) { console.error(e); return false; }`);
+                return fn(doc, frappe, parseInt, String, parseFloat);
+            } catch (e) {
+                console.error('Error in condition execution:', e);
+                return false;
+            }
+        } catch (e) {
+            console.error('Error in condition conversion:', e);
+            return false;
+        }
+    });
+}
+
+function initializeJsPlumb(transitions) {
+    jsPlumb.ready(function() {
+        jsPlumb.reset();
+        
+        let instance = jsPlumb.getInstance({
+            Container: "workflow-container",
+            ConnectionsDetachable: false,
+            Connector: ["Flowchart", { cornerRadius: 5, stub: [30, 30], gap: 10 }],
+            Endpoint: ["Dot", { radius: 5 }],
+            EndpointStyle: { fill: "#456" },
+            PaintStyle: { 
+                stroke: "#456",
+                strokeWidth: 2 
+            },
+            HoverPaintStyle: { stroke: "#789" },
+            ConnectionOverlays: [
+                ["Arrow", {
+                    location: 1,
+                    width: 10,
+                    length: 10
+                }],
+                ["Label", {
+                    label: function(conn) {
+                        let transition = transitions.find(t => 
+                            t.state.replace(/\s+/g, '-').toLowerCase() === conn.sourceId &&
+                            t.next_state.replace(/\s+/g, '-').toLowerCase() === conn.targetId
+                        );
+                        let label = transition ? transition.action : '';
+                        if (transition && transition.condition) {
+                            label += ' ⚙️';
+                        }
+                        return label;
+                    },
+                    cssClass: "connection-label"
+                }]
+            ]
+        });
+        
+        instance.draggable($(".workflow-state"), {
+            containment: true,
+            grid: [10, 10]
+        });
+        
+        transitions.forEach(t => {
+            let sourceId = t.state.replace(/\s+/g, '-').toLowerCase();
+            let targetId = t.next_state.replace(/\s+/g, '-').toLowerCase();
+            
+            instance.connect({
+                source: sourceId,
+                target: targetId,
+                anchor: ["Right", "Left"],
+                parameters: {
+                    action: t.action,
+                    condition: t.condition
+                }
+            });
+        });
+    });
+}
+
+function getStateIndicator(state, items = [], currentState = '', transitions = []) {
+    if (!Array.isArray(items)) items = [];
+    if (!Array.isArray(transitions)) transitions = [];
+
+    // Sort items by modification time to get state history
+    const sortedItems = [...items].sort((a, b) => {
+        return new Date(a.modification_time) - new Date(b.modification_time);
+    });
+
+    // Get the latest state from sorted items
+    const latestState = sortedItems.length > 0 
+        ? sortedItems[sortedItems.length - 1].workflow_state
+        : '';
+
+    // Check if this state exists in history
+    const stateExists = sortedItems.some(item => 
+        item.workflow_state &&
+        item.workflow_state.trim().toLowerCase() === state.trim().toLowerCase()
+    );
+
+    // If state exists in history, show checkmark or cross
+    if (stateExists) {
+        const negativeStates = ['cancel', 'reject', 'declined', 'rejected', 'cancelled'];
+        const isNegativeState = negativeStates.some(negState => 
+            state.toLowerCase().includes(negState.toLowerCase())
+        );
+        
+        return isNegativeState 
+            ? '<span class="state-indicator negative">✗</span>' 
+            : '<span class="state-indicator positive">✓</span>';
+    }
+
+    // Check if this is a possible next state from the latest state
+    const isNextPossibleState = transitions.some(transition => 
+        transition.state &&
+        transition.state.toLowerCase() === latestState.toLowerCase() &&
+        transition.next_state.toLowerCase() === state.toLowerCase()
+    );
+
+    // Show question mark only for next possible states that haven't been reached yet
+    if (isNextPossibleState && !stateExists) {
+        return '<span class="state-indicator next">?</span>';
+    }
+
+    return '';
+}
+
+function generateWorkflowHtml(transitions, items = []) {
+    let allStates = new Set();
+    transitions.forEach(t => {
+        allStates.add(t.state);
+        allStates.add(t.next_state);
+    });
+
+    let html = `<div id="workflow-container">
+                    <div class="workflow-states">`;
+
+    Array.from(allStates).forEach(state => {
+        let stateId = state.replace(/\s+/g, '-').toLowerCase();
+        let stateIndicator = getStateIndicator(state, items, "", transitions); 
+        
+        html += `<div class="workflow-state" id="${stateId}">
+                    <div class="state-text">${state}${stateIndicator}</div>
+                </div>`;
+    });
+
+    html += `   </div>
+              </div>`;
+
+    return html;
+}
+
+function injectWorkflowCSS() {
+    let css = `
+        #workflow-container {
+            position: relative;
+            width: 100%;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .workflow-states {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .workflow-state {
+            min-width: 180px;
+            min-height: 60px;
+            padding: 12px;
+            background: white;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .state-indicator {
+            display: inline-block;
+            margin-left: 5px;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .state-indicator.positive {
+            color: #22c55e;
+        }
+
+        .state-indicator.negative {
+            color: #ef4444;
+        }
+        .state-indicator.next {
+            color: #FFEA00;
+        }
+
+        .current-state {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            box-shadow: 0 0 0 2px #3b82f6;
+            transform: scale(1.05);
+        }
+
+        .state-text {
+            position: relative;
+            z-index: 1;
+        }
+    `;
+
+    $('.workflow-custom-style').remove();
+    $('<style class="workflow-custom-style">').text(css).appendTo('head');
+}

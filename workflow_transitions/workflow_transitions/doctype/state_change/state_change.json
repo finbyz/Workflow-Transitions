@@ -41,12 +41,13 @@
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "State Changes",
-   "options": "State Change Items"
+   "options": "State Change Items",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-12-05 13:19:43.282448",
+ "modified": "2025-02-04 14:38:16.025292",
  "modified_by": "Administrator",
  "module": "Workflow Transitions",
  "name": "State Change",
