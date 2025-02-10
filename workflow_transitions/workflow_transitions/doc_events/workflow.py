@@ -151,12 +151,12 @@ def generate_client_script(document_type):
     onload: function(frm) {
         injectWorkflowCSS();
 
-        if (frm.doc.doctype_name && frm.doc.document_name) {
+        if (frm.doc.doctype && frm.doc.name && !frm.is_new()) {
             frappe.call({
                 method: "frappe.client.get",
                 args: {
-                    doctype: frm.doc.doctype_name,
-                    name: frm.doc.document_name
+                    doctype: frm.doc.doctype,
+                    name: frm.doc.name
                 },
                 callback: function(doc_response) {
                     if (doc_response.message) {
@@ -165,14 +165,14 @@ def generate_client_script(document_type):
                         frappe.call({
                             method: "workflow_transitions.workflow_transitions.doc_events.workflow.get_workflow_transitions",
                             args: {
-                                doc: frm.doc.doctype_name
+                                doc: frm.doc.doctype
                             },
                             callback: function(transition_response) {
                                 if (transition_response.message) {
                                     let transitions = transition_response.message;
                                     
                                     transitions = filterTransitionsByConditions(transitions, doc);
-                                    let html = generateWorkflowHtml(transitions, frm.doc.items || []);
+                                    let html = generateWorkflowHtml(transitions, frm.doc.state_change || []);
                                     frm.fields_dict['custom_html'].wrapper.innerHTML = html;
                                     initializeJsPlumb(transitions);
                                 }
