@@ -191,9 +191,19 @@ function getStateIndicator(state, items = [], currentState = '', transitions = [
 
 function generateWorkflowHtml(transitions, items = []) {
     let allStates = new Set();
+    let stateRoles = new Map(); // Map to store roles for each state
+    
     transitions.forEach(t => {
         allStates.add(t.state);
         allStates.add(t.next_state);
+        
+        // Store roles for states
+        if (t.allowed && t.state) {
+            stateRoles.set(t.state, t.allowed);
+        }
+        if (t.allowed && t.next_state) {
+            stateRoles.set(t.next_state, t.allowed);
+        }
     });
 
     let html = `<div id="workflow-container">
@@ -201,10 +211,14 @@ function generateWorkflowHtml(transitions, items = []) {
 
     Array.from(allStates).forEach(state => {
         let stateId = state.replace(/\s+/g, '-').toLowerCase();
-        let stateIndicator = getStateIndicator(state, items, "", transitions); 
+        let stateIndicator = getStateIndicator(state, items, "", transitions);
+        let role = stateRoles.get(state) || 'Any';
         
         html += `<div class="workflow-state" id="${stateId}">
-                    <div class="state-text">${state}${stateIndicator}</div>
+                    <div class="state-content">
+                        <div class="state-text">${state}${stateIndicator}</div>
+                        <div class="state-role">${role}</div>
+                    </div>
                 </div>`;
     });
 
@@ -233,7 +247,7 @@ function injectWorkflowCSS() {
 
         .workflow-state {
             min-width: 180px;
-            min-height: 60px;
+            min-height: 80px;
             padding: 12px;
             background: white;
             border: 2px solid #d1d5db;
@@ -245,6 +259,20 @@ function injectWorkflowCSS() {
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
+        }
+
+        .state-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .state-role {
+            font-size: 0.8em;
+            color: #6b7280;
+            font-weight: normal;
+            font-style: italic;
         }
 
         .state-indicator {
@@ -275,6 +303,13 @@ function injectWorkflowCSS() {
         .state-text {
             position: relative;
             z-index: 1;
+        }
+
+        .connection-label {
+            background-color: white;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 0.8em;
         }
     `;
 
