@@ -103,7 +103,7 @@ if previous_state != doc.workflow_state:
         before_insert_server_script.script_type = "DocType Event"
         before_insert_server_script.reference_doctype = self.document_type
         before_insert_server_script.doctype_event = "Before Insert"
-        before_insert_server_script.script = """self.workflow_changes = []"""
+        before_insert_server_script.script = """doc.workflow_changes = []"""
         before_insert_server_script.save()
 
         meta = frappe.get_meta(self.document_type)
