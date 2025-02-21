@@ -148,6 +148,9 @@ if previous_state != doc.workflow_state:
 
 def generate_client_script(document_type):
     return f"frappe.ui.form.on('{document_type}', " +"""{
+    workflow_state:function(frm){
+        frm.trigger("onload")
+    },
     onload: function(frm) {
         injectWorkflowCSS();
 
