@@ -1,0 +1,38 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2025-03-11 13:05:05.322488",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+     "total_time",
+     "condition"
+    ],
+    "fields": [
+     {
+      "fieldname": "condition",
+      "fieldtype": "Code",
+      "in_list_view": 1,
+      "label": "Condition"
+     },
+     {
+      "fieldname": "total_time",
+      "fieldtype": "Float",
+      "in_list_view": 1,
+      "label": "Total Time"
+     }
+    ],
+    "index_web_pages_for_search": 1,
+    "istable": 1,
+    "links": [],
+    "modified": "2025-03-18 09:47:12.375943",
+    "modified_by": "Administrator",
+    "module": "Workflow Transitions",
+    "name": "Shift detail",
+    "owner": "Administrator",
+    "permissions": [],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
+   }

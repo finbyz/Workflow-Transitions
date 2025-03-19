@@ -1,0 +1,107 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2025-03-11 09:56:23.208823",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "doctype_name",
+  "document_name",
+  "workflow_state",
+  "time",
+  "total_shift_time",
+  "notification_send",
+  "notification_send_time",
+  "section_break_aatl",
+  "description",
+  "naming_series"
+ ],
+ "fields": [
+  {
+   "fieldname": "doctype_name",
+   "fieldtype": "Link",
+   "label": "Doctype Name",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "document_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Document name",
+   "options": "doctype_name"
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Workflow State"
+  },
+  {
+   "fieldname": "section_break_aatl",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "description": "Workflow state change time",
+   "fieldname": "time",
+   "fieldtype": "Datetime",
+   "label": "Time"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "{doctype_name}.-.{document_name}.-"
+  },
+  {
+   "fieldname": "total_shift_time",
+   "fieldtype": "Float",
+   "label": "Total Shift Time"
+  },
+  {
+   "default": "0",
+   "fieldname": "notification_send",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Notification send",
+   "read_only": 1
+  },
+  {
+   "fieldname": "notification_send_time",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Notification send time"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-03-19 09:11:01.784445",
+ "modified_by": "Administrator",
+ "module": "Workflow Transitions",
+ "name": "Workflow Reminder",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

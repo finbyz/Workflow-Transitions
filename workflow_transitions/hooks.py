@@ -26,7 +26,7 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/workflow_transitions/css/workflow_transitions.css"
-app_include_js = "/assets/jsplumb.min.js"
+# app_include_js = "/assets/jsplumb.min.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/workflow_transitions/css/workflow_transitions.css"
@@ -146,23 +146,13 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"workflow_transitions.tasks.all"
-# 	],
-# 	"daily": [
-# 		"workflow_transitions.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"workflow_transitions.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"workflow_transitions.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"workflow_transitions.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	"cron":{
+		"* * * * *": [
+			"workflow_transitions.workflow_transitions.doctype.workflow_reminder.workflow_reminder.send_notification"
+		]
+	},
+}
 
 # Testing
 # -------

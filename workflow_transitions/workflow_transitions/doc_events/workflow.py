@@ -145,6 +145,40 @@ if previous_state != doc.workflow_state:
         client_script.script = generate_client_script(self.document_type)
         client_script.insert()
         frappe.db.commit()
+    if self.is_active and not self.track_state_transitions:
+        if frappe.db.exists("Server Script",f"Track State Transition For {self.document_type}"):
+            frappe.delete_doc("Server Script",f"Track State Transition For {self.document_type}")
+        if frappe.db.exists("Server Script", f"Before insert for {self.document_type}"):
+            frappe.delete_doc("Server Script", f"Before insert for {self.document_type}")
+        if frappe.db.exists("Client Script", client_script_name):
+            frappe.delete_doc("Client Script", client_script_name)
+    
+        # for reminder section
+    if self.is_active and self.reminder:
+        if frappe.db.exists("Server Script",f"Reminder For {self.document_type}"):
+            frappe.delete_doc("Server Script",f"Reminder For {self.document_type}")
+
+        server_script = frappe.new_doc("Server Script")
+        server_script.name = f"Reminder For {self.document_type}"
+        server_script.script_type = "DocType Event"
+        server_script.reference_doctype = self.document_type
+        server_script.doctype_event = "After Save"
+        server_script.script = """data = frappe.get_all("Workflow Reminder",
+        filters={"document_name": doc.name, "doctype_name": doc.doctype, "workflow_state": doc.workflow_state})
+if not data:
+    doc_reminder = frappe.new_doc("Workflow Reminder")
+    doc_reminder.workflow_state = doc.workflow_state
+    doc_reminder.doctype_name = doc.doctype
+    doc_reminder.document_name = doc.name
+    doc_reminder.time = frappe.utils.now()
+    doc_reminder.description = f"Reminder for {doc.doctype} {doc.name} in state {doc.workflow_state}"
+    
+    doc_reminder.save()
+        """
+        server_script.save()
+    if self.is_active and not self.reminder:
+        if frappe.db.exists("Server Script",f"Reminder For {self.document_type}"):
+            frappe.delete_doc("Server Script",f"Reminder For {self.document_type}")
 
 def generate_client_script(document_type):
     return f"frappe.ui.form.on('{document_type}', " +"""{
@@ -493,3 +527,4 @@ def get_workflow_transitions(doc):
     """, as_dict=True)
     
     return transitions
+    
