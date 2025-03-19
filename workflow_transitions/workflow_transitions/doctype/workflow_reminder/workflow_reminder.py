@@ -83,15 +83,12 @@ def send_reminder(data):
 
         # Create Notification Logs and (Optional) Send Emails
         for user in users:
-            user_id = user.parent
-            user_email = frappe.db.get_value("User", user_id, "email")
-            if not user_id:
-                frappe.log_error(f"Could not find email for User: {user_id}", "Workflow Reminder")
+            if not user.parent:
                 continue  # Skip this user if no email is found
 
             # Create notification log
             notification = frappe.new_doc("Notification Log")
-            notification.for_user = user_id
+            notification.for_user = user.parent
             notification.type = "Alert"
             notification.document_type = data.doctype_name
             notification.document_name = data.document_name
@@ -99,20 +96,19 @@ def send_reminder(data):
             notification.insert()
 
             # (Optional) Email sending - Uncomment if required
-            # email_body = f"""
-            # Dear {user_id},
-            # This is a reminder to take action on document **{data.document_name}** ({data.doctype_name}).
-            # Current Workflow Stage: **{current_state}**
-            # Please review and proceed as per the workflow process.
-            # """
-            # frappe.sendmail(
-            #     recipients=user_email,
-            #     subject="Workflow Reminder Alert",
-            #     message=email_body,
-            #     now=frappe.flags.in_test,
-            # )
+            email_body = f"""
+            Dear {user.parent},
+            This is a reminder to take action on document **{data.document_name}** ({data.doctype_name}).
+            Current Workflow Stage: **{current_state}**
+            Please review and proceed as per the workflow process.
+            """
+            frappe.sendmail(
+                recipients=user.parent,
+                subject="Workflow Reminder Alert",
+                message=email_body,
+                now=frappe.flags.in_test,
+            )
 
-        # ✅ Mark as notification sent to prevent re-sending
         
 
     except Exception as e:
