@@ -116,6 +116,7 @@ if previous_state != doc.workflow_state:
         ]
 
         existing_fieldnames = [df.fieldname for df in meta.get("fields")]
+        client_script_name = f"{self.document_type}-State Change"
 
         for field in field_definitions:
             if field["fieldname"] not in existing_fieldnames:
@@ -132,7 +133,6 @@ if previous_state != doc.workflow_state:
 
         frappe.db.commit()
 
-        client_script_name = f"{self.document_type}-State Change"
         
         if frappe.db.exists("Client Script", client_script_name):
             frappe.delete_doc("Client Script", client_script_name)
@@ -146,6 +146,8 @@ if previous_state != doc.workflow_state:
         client_script.insert()
         frappe.db.commit()
     if self.is_active and not self.track_state_transitions:
+        client_script_name = f"{self.document_type}-State Change"
+
         if frappe.db.exists("Server Script",f"Track State Transition For {self.document_type}"):
             frappe.delete_doc("Server Script",f"Track State Transition For {self.document_type}")
         if frappe.db.exists("Server Script", f"Before insert for {self.document_type}"):
