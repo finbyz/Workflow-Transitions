@@ -17,10 +17,13 @@ class WorkflowReminder(Document):
         # Evaluate conditions inside Document Shift child table
         for row in data.shift_details:
             context = get_context(frappe.get_doc(self.doctype_name, self.document_name))
-            condition_result = frappe.safe_eval(row.condition, None, context)
+            if not row.condition:
+                self.total_shift_time = row.total_time
+            else:
+                condition_result = frappe.safe_eval(row.condition, None, context)
             if condition_result:
                 self.total_shift_time = row.total_time  # Assuming row.total_time is in hours
-                break  # Stop after the first matched condition
+                # Stop after the first matched condition
 
         # Ensure required fields are available
         if not self.time or not self.total_shift_time:
@@ -122,7 +125,7 @@ def send_notification():
             filters={"notification_send": 0}
         )
         for reminder in workflow_reminders:
-            if reminder.notification_send_time <= now_datetime() and frappe.db.get_value(reminder.doctype_name,reminder.document_name,"workflow_state") == reminder.workflow_state:
+            if reminder.notification_send_time <= now_datetime() and frappe.db.get_value(reminder.doctype_name,reminder.document_name,"workflow_state") == reminder.workflow_state and frappe.db.get_value(reminder.doctype_name,reminder.document_name,"docstatus") == 0:
                 workflow_doc = frappe.get_doc("Workflow Reminder", reminder.get("name"))
                 send_reminder(workflow_doc)
                 workflow_doc.db_set("notification_send", 1)
