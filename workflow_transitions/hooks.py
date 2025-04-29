@@ -149,7 +149,8 @@ doc_events = {
 scheduler_events = {
 	"cron":{
 		"* * * * *": [
-			"workflow_transitions.workflow_transitions.doctype.workflow_reminder.workflow_reminder.send_notification"
+			"workflow_transitions.workflow_transitions.doctype.workflow_reminder.workflow_reminder.send_notification",
+			"workflow_transitions.workflow_transitions.doctype.workflow_reminder.workflow_reminder.send_overdue_notification",
 		]
 	},
 }

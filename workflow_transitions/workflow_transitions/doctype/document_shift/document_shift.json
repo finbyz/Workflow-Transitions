@@ -1,93 +1,112 @@
 {
-    "actions": [],
-    "allow_rename": 1,
-    "autoname": "field:doctype_name",
-    "creation": "2025-03-11 12:47:10.369692",
-    "doctype": "DocType",
-    "engine": "InnoDB",
-    "field_order": [
-     "regular_shift_time_section",
-     "doctype_name",
-     "start_time",
-     "end_time",
-     "break_time_section",
-     "break_start_time",
-     "break_end_time",
-     "section_break_zpfa",
-     "shift_details"
-    ],
-    "fields": [
-     {
-      "fieldname": "doctype_name",
-      "fieldtype": "Link",
-      "label": "Doctype Name",
-      "options": "DocType",
-      "unique": 1
-     },
-     {
-      "fieldname": "shift_details",
-      "fieldtype": "Table",
-      "label": "Shift Details",
-      "options": "Shift detail"
-     },
-     {
-      "fieldname": "start_time",
-      "fieldtype": "Time",
-      "label": "Start Time"
-     },
-     {
-      "fieldname": "end_time",
-      "fieldtype": "Time",
-      "label": "End Time"
-     },
-     {
-      "fieldname": "break_time_section",
-      "fieldtype": "Section Break",
-      "label": "Break Time"
-     },
-     {
-      "fieldname": "break_start_time",
-      "fieldtype": "Time",
-      "label": "Break Start Time"
-     },
-     {
-      "fieldname": "break_end_time",
-      "fieldtype": "Time",
-      "label": "Break End Time"
-     },
-     {
-      "fieldname": "section_break_zpfa",
-      "fieldtype": "Section Break"
-     },
-     {
-      "fieldname": "regular_shift_time_section",
-      "fieldtype": "Section Break",
-      "label": "Regular Shift Time"
-     }
-    ],
-    "index_web_pages_for_search": 1,
-    "links": [],
-    "modified": "2025-03-13 07:41:17.913416",
-    "modified_by": "Administrator",
-    "module": "Workflow Transitions",
-    "name": "Document Shift",
-    "naming_rule": "By fieldname",
-    "owner": "Administrator",
-    "permissions": [
-     {
-      "create": 1,
-      "delete": 1,
-      "email": 1,
-      "export": 1,
-      "print": 1,
-      "read": 1,
-      "report": 1,
-      "role": "System Manager",
-      "share": 1,
-      "write": 1
-     }
-    ],
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": []
-   }
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:doctype_name",
+ "creation": "2025-03-11 12:47:10.369692",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "regular_shift_time_section",
+  "doctype_name",
+  "start_time",
+  "end_time",
+  "column_break_cwle",
+  "overdue_time",
+  "role",
+  "break_time_section",
+  "break_start_time",
+  "break_end_time",
+  "section_break_zpfa",
+  "shift_details"
+ ],
+ "fields": [
+  {
+   "fieldname": "doctype_name",
+   "fieldtype": "Link",
+   "label": "Doctype Name",
+   "options": "DocType",
+   "unique": 1
+  },
+  {
+   "fieldname": "shift_details",
+   "fieldtype": "Table",
+   "label": "Shift Details",
+   "options": "Shift detail"
+  },
+  {
+   "fieldname": "start_time",
+   "fieldtype": "Time",
+   "label": "Start Time"
+  },
+  {
+   "fieldname": "end_time",
+   "fieldtype": "Time",
+   "label": "End Time"
+  },
+  {
+   "fieldname": "break_time_section",
+   "fieldtype": "Section Break",
+   "label": "Break Time"
+  },
+  {
+   "fieldname": "break_start_time",
+   "fieldtype": "Time",
+   "label": "Break Start Time"
+  },
+  {
+   "fieldname": "break_end_time",
+   "fieldtype": "Time",
+   "label": "Break End Time"
+  },
+  {
+   "fieldname": "section_break_zpfa",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "regular_shift_time_section",
+   "fieldtype": "Section Break",
+   "label": "Regular Shift Time"
+  },
+  {
+   "fieldname": "column_break_cwle",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "overdue_time",
+   "fieldtype": "Int",
+   "label": "Overdue Time"
+  },
+  {
+   "fieldname": "role",
+   "fieldtype": "Link",
+   "label": "Role ",
+   "options": "Role"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-04-24 11:29:12.023253",
+ "modified_by": "Administrator",
+ "module": "Workflow Transitions",
+ "name": "Document Shift",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

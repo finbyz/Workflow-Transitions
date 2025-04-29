@@ -13,6 +13,10 @@
   "total_shift_time",
   "notification_send",
   "notification_send_time",
+  "overdue_time",
+  "overdue_shift_time",
+  "overdue_notification_send",
+  "role",
   "section_break_aatl",
   "description",
   "naming_series"
@@ -68,19 +72,40 @@
    "fieldname": "notification_send",
    "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Notification send",
-   "read_only": 1
+   "label": "Notification send"
   },
   {
    "fieldname": "notification_send_time",
    "fieldtype": "Datetime",
    "in_list_view": 1,
    "label": "Notification send time"
+  },
+  {
+   "fieldname": "overdue_time",
+   "fieldtype": "Datetime",
+   "label": "Overdue Time"
+  },
+  {
+   "fieldname": "overdue_shift_time",
+   "fieldtype": "Float",
+   "label": "Overdue shift Time"
+  },
+  {
+   "default": "0",
+   "fieldname": "overdue_notification_send",
+   "fieldtype": "Check",
+   "label": "Overdue Notification Send"
+  },
+  {
+   "fieldname": "role",
+   "fieldtype": "Link",
+   "label": "Role",
+   "options": "Role"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-19 09:11:01.784445",
+ "modified": "2025-04-25 12:01:00.090813",
  "modified_by": "Administrator",
  "module": "Workflow Transitions",
  "name": "Workflow Reminder",
@@ -100,6 +125,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
