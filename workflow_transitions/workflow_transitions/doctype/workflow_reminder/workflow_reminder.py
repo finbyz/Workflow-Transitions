@@ -21,8 +21,8 @@ class WorkflowReminder(Document):
                 self.total_shift_time = row.total_time
             else:
                 condition_result = frappe.safe_eval(row.condition, None, context)
-            if condition_result:
-                self.total_shift_time = row.total_time  # Assuming row.total_time is in hours
+                if condition_result:
+                    self.total_shift_time = row.total_time  # Assuming row.total_time is in hours
         if data.overdue_time:
             self.overdue_shift_time = data.overdue_time
         if data.role:
