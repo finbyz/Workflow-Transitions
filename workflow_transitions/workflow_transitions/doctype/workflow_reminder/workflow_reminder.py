@@ -106,10 +106,10 @@ def send_reminder(data):
 
             # (Optional) Email sending - Uncomment if required
             email_body = f"""
-            Dear {user.parent},
-            This is a reminder to take action on document **{data.document_name}** ({data.doctype_name}).
-            Current Workflow Stage: **{current_state}**
-            Please review and proceed as per the workflow process.
+            Dear {user.parent},<br><br>
+            This is a reminder to take action on document **{data.document_name}** ({data.doctype_name}).<br>
+            Current Workflow Stage: **{current_state}**<br>
+            Please review and proceed as per the workflow process.<br>
             """
             frappe.sendmail(
                 recipients=user.parent,
@@ -228,11 +228,11 @@ def send_overdue_notification():
     try:
         overdue_reminders = frappe.get_all(
             "Workflow Reminder",
-            fields=["name", "doctype_name", "document_name", "description", "overdue_shift_time","notification_send_time","workflow_state"],
+            fields=["name", "doctype_name", "document_name", "description", "overdue_shift_time","overdue_time","workflow_state"],
             filters={"notification_send": 1,"overdue_shift_time": [">", 0]}
         )
         for reminder in overdue_reminders:
-            if reminder.notification_send_time <= now_datetime() and frappe.db.get_value(reminder.doctype_name,reminder.document_name,"workflow_state") == reminder.workflow_state and frappe.db.get_value(reminder.doctype_name,reminder.document_name,"docstatus") == 0:
+            if reminder.overdue_time <= now_datetime() and frappe.db.get_value(reminder.doctype_name,reminder.document_name,"workflow_state") == reminder.workflow_state and frappe.db.get_value(reminder.doctype_name,reminder.document_name,"docstatus") == 0:
                 workflow_doc = frappe.get_doc("Workflow Reminder", reminder.get("name"))
                 send_overdue_email_reminder(workflow_doc)
                 workflow_doc.db_set("overdue_notification_send", 1)
@@ -244,39 +244,73 @@ def send_overdue_notification():
         
 def send_overdue_email_reminder(data):
     try:
+        frappe.logger().info(f"[Reminder Debug] Triggered for: {data.name} | Doctype: {data.doctype_name} | Doc: {data.document_name} | Role: {data.role}")
+
         workflow = frappe.get_value("Workflow", {"document_type": data.doctype_name, "is_active": 1}, "name")
         if not workflow:
             frappe.log_error("Active Workflow not found", "Workflow Reminder")
             return
+
         workflow_doc = frappe.get_doc("Workflow", workflow)
         current_state = data.workflow_state
         next_roles = set()
 
-        # Loop through transitions and find eligible next state(s) from current_state
+        # Find roles responsible for next actions
         for transition in workflow_doc.transitions:
             if transition.state == current_state:
-                # Check condition if exists
                 if transition.condition:
-                    if not frappe.safe_eval(transition.condition, {"doc": frappe.get_doc(data.doctype_name, data.document_name)}):
-                        continue  # Skip this transition if condition fails
-                # If condition passed or not required, add role to notify
+                    try:
+                        if not frappe.safe_eval(transition.condition, {"doc": frappe.get_doc(data.doctype_name, data.document_name)}):
+                            continue
+                    except Exception as eval_err:
+                        frappe.log_error(f"Error evaluating condition: {transition.condition} — {str(eval_err)}", "Workflow Reminder")
+                        continue
                 if transition.allowed:
                     next_roles.add(transition.allowed)
-        role_list = ", ".join(next_roles)
-        # Fetch users based on the role(s)
-        users = frappe.get_all("Has Role", 
-            filters={"role": ["=", data.role]}, 
-            fields=["parent"])  # 'parent' is the user
 
-        if not users:
-            frappe.log_error(f"No users found for roles: {data.role}", "Workflow Reminder")
+        role_list = ", ".join(next_roles)
+
+        # Fetch valid users for next roles
+        users_with_next_roles = frappe.get_all(
+            "Has Role",
+            filters={"role": ["in", list(next_roles)]},
+            fields=["parent"]
+        )
+
+        valid_users = set()
+        for user in users_with_next_roles:
+            if not frappe.db.exists("User", user.parent):
+                # frappe.log_error(f"[Reminder Debug] Skipping invalid user: {user.parent} (User not found)", "Workflow Reminder")
+                continue
+
+            user_doc = frappe.get_doc("User", user.parent)
+            if user_doc.enabled and user_doc.user_type == "System User" and user_doc.email:
+                valid_users.add(user_doc.email)
+
+        users_list_html = "<br>".join(valid_users)
+
+        # 🔸 Fetch users based on `data.role` (used for sending notifications)
+        if not data.role:
+            frappe.log_error("Missing `data.role` in Workflow Reminder", "Workflow Reminder")
             return
 
+        users = frappe.get_all(
+            "Has Role",
+            filters={"role": data.role},
+            fields=["parent"]
+        )
 
-        # Create Notification Logs and (Optional) Send Emails
+        if not users:
+            frappe.log_error(f"No users found for role: {data.role}", "Workflow Reminder")
+            return
+
+        base_url = frappe.utils.get_url()
+        doc_link = f"{base_url}/app/{data.doctype_name.lower().replace(' ', '-')}/{data.document_name}"
+
         for user in users:
-            if not user.parent:
-                continue  # Skip this user if no email is found
+            if not user.parent or not frappe.db.exists("User", user.parent):
+                frappe.log_error(f"[Reminder Debug] Skipping notification: Invalid or missing user {user.parent}", "Workflow Reminder")
+                continue
 
             # Create notification log
             notification = frappe.new_doc("Notification Log")
@@ -287,25 +321,26 @@ def send_overdue_email_reminder(data):
             notification.subject = f"Overdue Reminder for {data.document_name}"
             notification.insert()
 
-            # (Optional) Email sending - Uncomment if required
+            # Compose and send email
             email_body = f"""
-            Dear User,
-
-            The following document has been delayed for more than the expected time:
-            Document Type: {data.doctype_name}
-            ID: {data.document_name}
-            Role Holder(s) Responsible for Next Action: {role_list}
-            
-            
-            Please coordinate with the Role Holder to expedite the Approval/Rejection on the Document.
-            Thank you and have a nice day
+            Dear User,<br><br>
+            The following document has been delayed for more than the expected time:<br>
+            <b>Document Type:</b> {data.doctype_name}<br>
+            <b>ID:</b> {data.document_name}<br>
+            <b>Role Holder(s) Responsible for Next Action:</b> {role_list}<br><br>
+            <b>Users with Next Roles:</b><br>
+            {users_list_html}<br><br>
+            <b>Document Link:</b> <a href="{doc_link}">{data.document_name}</a><br><br>
+            Please coordinate with the responsible Role Holders to expedite the Approval/Rejection on the Document.<br>
+            Thank you and have a nice day.
             """
+
             frappe.sendmail(
                 recipients=user.parent,
                 subject="Workflow Overdue Reminder Alert",
                 message=email_body,
                 now=frappe.flags.in_test,
             )
-    except Exception as e:  
-        data.log_error(f"Failed to send overdue reminder: {str(e)}")
-        frappe.log_error(f"Failed to send overdue reminder: {str(e)}")
+
+    except Exception as e:
+        frappe.log_error(f"Failed to send overdue reminder: {str(e)}", "Workflow Reminder")
