@@ -154,6 +154,12 @@ if previous_state != doc.workflow_state:
             frappe.delete_doc("Server Script", f"Before insert for {self.document_type}")
         if frappe.db.exists("Client Script", client_script_name):
             frappe.delete_doc("Client Script", client_script_name)
+        if frappe.db.exists("Custom Field",{"dt":self.document_type},{"fieldname":"workflow_progress"}):
+            frappe.db.delete("Custom Field", {"dt": self.document_type,"fieldname": "workflow_progress"})
+        if frappe.db.exists("Custom Field",{"dt":self.document_type},{"fieldname":"state_change"}):
+            frappe.db.delete("Custom Field", {"dt": self.document_type,"fieldname": "state_change"})
+        if frappe.db.exists("Custom Field",{"dt":self.document_type},{"fieldname":"custom_html"}):
+            frappe.db.delete("Custom Field", {"dt": self.document_type,"fieldname": "custom_html"})
     
         # for reminder section
     if self.is_active and self.reminder:
