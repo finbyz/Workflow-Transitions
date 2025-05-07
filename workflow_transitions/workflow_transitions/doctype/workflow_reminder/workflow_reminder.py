@@ -82,46 +82,70 @@ def send_reminder(data):
         users = frappe.get_all("Has Role", 
             filters={"role": ["in", list(next_roles)]}, 
             fields=["parent"])  # 'parent' is the user
-
-        if not users:
+        
+        user_list = []
+        doctype_data = frappe.get_doc(data.doctype_name, data.document_name)
+        
+        for row in users:
+            user_id = row.parent  # Get actual user ID string
+            if frappe.db.exists("User", user_id):
+                if frappe.db.get_value("Workflow", {"document_type": data.doctype_name, "is_active": 1}, "send_email_as_project_condition") == 1:
+                    if check_project_permissions(user_id, doctype_data):
+                        user_list.append(user_id)
+                else:
+                    user_list.append(user_id)
+        
+        if not user_list:
             frappe.log_error(f"No users found for roles: {next_roles}", "Workflow Reminder")
-            return
+            user_list = [row.parent for row in users]
 
         if data.notification_send:
             return  # Already sent
 
         # Create Notification Logs and (Optional) Send Emails
-        for user in users:
-            if not user.parent:
+        user_list = list(set(user_list))
+        print(user_list)
+        for user in user_list:
+            if not user:
                 continue  # Skip this user if no email is found
 
             # Create notification log
             notification = frappe.new_doc("Notification Log")
-            notification.for_user = user.parent
+            notification.for_user = user  # Directly assign the user ID string
             notification.type = "Alert"
             notification.document_type = data.doctype_name
             notification.document_name = data.document_name
             notification.subject = data.description or f"Reminder for {data.document_name}"
             notification.insert()
 
-            # (Optional) Email sending - Uncomment if required
+            # (Optional) Email sending
             email_body = f"""
-            Dear {user.parent},<br><br>
+            Dear {user},<br><br>
             This is a reminder to take action on document **{data.document_name}** ({data.doctype_name}).<br>
             Current Workflow Stage: **{current_state}**<br>
             Please review and proceed as per the workflow process.<br>
             """
             frappe.sendmail(
-                recipients=user.parent,
+                recipients=user,
                 subject="Workflow Reminder Alert",
                 message=email_body,
                 now=frappe.flags.in_test,
             )
 
-        
-
     except Exception as e:
-        data.log_error(f"Failed to send reminder: {str(e)}")
+        frappe.log_error(f"Failed to send reminder: {str(e)}", "Workflow Reminder")
+                
+def check_project_permissions(user, doc):
+    all_documents = [doc] + doc.get_all_children()
+    
+    for d in all_documents:
+        meta = frappe.get_meta(d.doctype)
+        for row in meta.get_link_fields():
+            if row.options == "Project" and ((d.get(row.fieldname) and not frappe.db.exists("User Permission", {"user": user, "allow": "Project","for_value": d.get(row.fieldname)})) or not d.get(row.fieldname)):
+                
+                return False
+    
+    return True
 
 def send_notification():
     try:
