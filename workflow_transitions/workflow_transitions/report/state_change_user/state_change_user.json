@@ -1,0 +1,38 @@
+{
+ "add_total_row": 0,
+ "add_translate_data": 0,
+ "columns": [],
+ "creation": "2025-07-14 08:14:43.118537",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "letter_head": "CPC Letterhead",
+ "letterhead": null,
+ "modified": "2025-07-14 08:14:43.118537",
+ "modified_by": "Administrator",
+ "module": "Workflow Transitions",
+ "name": "State Change User",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "State Change",
+ "report_name": "State Change User",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "General Manager"
+  },
+  {
+   "role": "Assistant General Manager"
+  },
+  {
+   "role": "Read All Pages"
+  }
+ ],
+ "timeout": 0
+}
