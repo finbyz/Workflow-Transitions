@@ -88,7 +88,7 @@ def send_reminder(data):
         
         for row in users:
             user_id = row.parent  # Get actual user ID string
-            if frappe.db.exists("User", user_id):
+            if frappe.db.exists("User", user_id) and user_id != "Administrator":
                 if frappe.db.get_value("Workflow", {"document_type": data.doctype_name, "is_active": 1}, "send_email_as_project_condition") == 1:
                     if check_project_permissions(user_id, doctype_data):
                         user_list.append(user_id)
@@ -308,7 +308,7 @@ def send_overdue_email_reminder(data):
                 continue
 
             user_doc = frappe.get_doc("User", user.parent)
-            if user_doc.enabled and user_doc.user_type == "System User" and user_doc.email:
+            if user_doc.enabled and user_doc.user_type == "System User" and user_doc.email and user_doc != "Administrator":
                 valid_users.add(user_doc.email)
 
         users_list_html = "<br>".join(valid_users)
