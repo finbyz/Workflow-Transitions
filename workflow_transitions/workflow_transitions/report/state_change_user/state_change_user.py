@@ -129,8 +129,8 @@ def execute(filters=None):
     elif doctype and user_filter:
         columns = [
             {"fieldname": "username", "label": "User", "fieldtype": "Link", "options": "User"},
-            {"fieldname": "avg_duration", "label": "Avg Duration (HH:MM:SS)", "fieldtype": "Data"},
-            {"fieldname": "transition_count", "label": "Transition Count", "fieldtype": "Int"},
+            {"fieldname": "document_count", "label": "Transaction Count", "fieldtype": "Int"},
+            {"fieldname": "avg_duration", "label": "Avg Duration (HH:MM:SS)", "fieldtype": "Data"}
         ]
 
         transitions = frappe.db.sql("""
@@ -142,12 +142,14 @@ def execute(filters=None):
         """, (doctype, user_filter), as_dict=True)
 
         durations = []
+        doc_set = set()
         prev_doc = None
         prev_time = None
 
         for row in transitions:
             doc = row.document_name
             time = row.modification_time
+            doc_set.add(doc)
             if prev_doc == doc and prev_time:
                 delta = time - prev_time
                 durations.append(delta)
@@ -158,16 +160,16 @@ def execute(filters=None):
 
         return columns, [{
             "username": user_filter,
-            "avg_duration": avg_str,
-            "transition_count": len(durations)
+            "document_count": len(doc_set),
+            "avg_duration": avg_str
         }]
 
     # Case 3: Doctype only (summary of all users)
     elif doctype:
         columns = [
             {"fieldname": "username", "label": "User", "fieldtype": "Link", "options": "User"},
-            {"fieldname": "avg_duration", "label": "Avg Duration (HH:MM:SS)", "fieldtype": "Data"},
-            {"fieldname": "transition_count", "label": "Transition Count", "fieldtype": "Int"},
+            {"fieldname": "document_count", "label": "Transaction Count", "fieldtype": "Int"},
+            {"fieldname": "avg_duration", "label": "Avg Duration (HH:MM:SS)", "fieldtype": "Data"}
         ]
 
         transitions = frappe.db.sql("""
@@ -178,33 +180,30 @@ def execute(filters=None):
             ORDER BY sc.document_name, sci.username, sci.modification_time
         """, (doctype,), as_dict=True)
 
-        user_durations = defaultdict(list)
-        prev_doc = None
-        prev_user = None
-        prev_time = None
+        user_data = defaultdict(lambda: {"durations": [], "documents": set(), "prev_doc": None, "prev_time": None})
 
         for row in transitions:
-            doc = row.document_name
             user = row.username
+            doc = row.document_name
             time = row.modification_time
 
-            if prev_doc == doc and prev_user == user and prev_time:
-                delta = time - prev_time
-                user_durations[user].append(delta)
+            user_data[user]["documents"].add(doc)
+            if user_data[user]["prev_doc"] == doc and user_data[user]["prev_time"]:
+                delta = time - user_data[user]["prev_time"]
+                user_data[user]["durations"].append(delta)
 
-            prev_doc = doc
-            prev_user = user
-            prev_time = time
+            user_data[user]["prev_doc"] = doc
+            user_data[user]["prev_time"] = time
 
         data = []
-        for user, durations in user_durations.items():
-            if durations:
-                avg = sum(durations, timedelta()) / len(durations)
+        for user, info in user_data.items():
+            if info["durations"]:
+                avg = sum(info["durations"], timedelta()) / len(info["durations"])
                 avg_str = format_duration(avg)
                 data.append({
                     "username": user,
-                    "avg_duration": avg_str,
-                    "transition_count": len(durations)
+                    "document_count": len(info["documents"]),
+                    "avg_duration": avg_str
                 })
 
         return columns, data

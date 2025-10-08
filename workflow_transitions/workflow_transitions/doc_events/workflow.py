@@ -93,8 +93,74 @@ if previous_state != doc.workflow_state:
     workflow_state(doc)
 
 """
-        
+     
         before_validate_server_script.save()
+        if frappe.db.exists("Server Script", f"Add Approvers Before Validate for {self.document_type}"):
+            frappe.delete_doc("Server Script", f"Add Approvers Before Validate for {self.document_type}")
+        
+        add_approvers = frappe.new_doc("Server Script")
+        add_approvers.name = f"Add Approvers Before Validate for {self.document_type}"
+        add_approvers.script_type = "DocType Event"
+        add_approvers.reference_doctype = self.document_type
+        add_approvers.doctype_event = "Before Validate"
+        add_approvers.script = """
+def update_userdetail_workflow(doc, method=None):
+    workflow_name = frappe.db.get_value("Workflow", {"document_type": doc.doctype}, "name")
+    if not workflow_name:
+        frappe.throw(f"No workflow found for {doc.doctype}")
+
+    current_state = doc.workflow_state or None
+    if not current_state:
+        frappe.throw(f"No workflow state found for {doc.doctype} {doc.name}")
+
+    roles = frappe.get_all(
+        "Workflow Document State",
+        filters={"parent": workflow_name, "state": current_state},
+        fields=["allow_edit"]
+    )
+    allowed_roles = [r.allow_edit for r in roles if r.allow_edit]
+
+    project_id = doc.project or None
+    valid_users = []
+    projects = []
+    projects.append(project_id)
+    for i in doc.items:
+        projects.append(i.project)
+    if allowed_roles:
+        users_with_roles = frappe.get_all(
+            "Has Role",
+            filters={"role": ["in", allowed_roles]},
+            fields=["parent as user", "role"]
+        )
+
+        for row in users_with_roles:
+            user = row.user
+            role = row.role
+
+            if not frappe.db.get_value("User", user, "enabled"):
+                continue
+
+            has_perm = frappe.db.exists(
+                "User Permission",
+                {"user": user, "allow": "Project", "for_value": ["in", projects]}
+            )
+            if not has_perm:
+                continue
+
+            full_name = frappe.db.get_value("User", user, "full_name") or ""
+            valid_users.append({
+                "user": user,
+                "user_name": full_name,
+                "role": role
+            })
+
+    doc.set("userdetail_workflow", [])
+    for u in valid_users:
+        doc.append("userdetail_workflow", u)
+        
+update_userdetail_workflow(doc)
+"""
+        add_approvers.save()
         if frappe.db.exists("Server Script", f"Before insert for {self.document_type}"):
             frappe.delete_doc("Server Script", f"Before insert for {self.document_type}")
         
@@ -112,7 +178,8 @@ if previous_state != doc.workflow_state:
         field_definitions = [
             {"fieldname": "workflow_progress", "label": "Progress", "fieldtype": "Tab Break", "insert_after": last_field},
             {"fieldname": "custom_html", "label": "HTML", "fieldtype": "HTML", "insert_after": "workflow_progress"},
-            {"fieldname": "state_change", "label": "State Change", "fieldtype": "Table", "options": "State Change Items", "insert_after": "custom_html"}
+            {"fieldname": "state_change", "label": "State Change", "fieldtype": "Table", "options": "State Change Items", "insert_after": "custom_html"},
+            {"fieldname": "userdetail_workflow", "label": "State change user", "fieldtype": "Table", "options": "Approvers", "insert_after": "state_change"}
         ]
 
         existing_fieldnames = [df.fieldname for df in meta.get("fields")]
