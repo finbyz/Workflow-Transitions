@@ -118,10 +118,12 @@ def send_reminder(data):
             notification.subject = data.description or f"Reminder for {data.document_name}"
             notification.insert()
 
+            doc_url = f"{frappe.utils.get_url()}/app/{frappe.scrub(data.doctype_name)}/{data.document_name}"
             # (Optional) Email sending
             email_body = f"""
             Dear {user},<br><br>
             This is a reminder to take action on document **{data.document_name}** ({data.doctype_name}).<br>
+            This is a reminder to take action on document <a href="{doc_url}"><b>{data.document_name}</b></a>  ({data.doctype_name}).<br>
             Current Workflow Stage: **{current_state}**<br>
             Please review and proceed as per the workflow process.<br>
             """
