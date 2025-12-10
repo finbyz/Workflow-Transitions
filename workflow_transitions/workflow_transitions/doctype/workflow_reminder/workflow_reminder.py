@@ -337,6 +337,10 @@ def send_overdue_email_reminder(data):
             if not user.parent or not frappe.db.exists("User", user.parent):
                 frappe.log_error(f"[Reminder Debug] Skipping notification: Invalid or missing user {user.parent}", "Workflow Reminder")
                 continue
+            
+            if user.parent == "Administrator":
+                frappe.log_error("[Reminder Debug] Skipping Administrator", "Workflow Reminder")
+                continue
 
             # Create notification log
             notification = frappe.new_doc("Notification Log")
