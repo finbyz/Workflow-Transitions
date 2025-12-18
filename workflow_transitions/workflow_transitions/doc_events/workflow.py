@@ -86,7 +86,7 @@ def workflow_state(doc):
         )
 
         for ws in workflow_states:
-            if ws.update_value == doc.workflow_state:
+            if ws.state == doc.workflow_state:
                 workflow_role = ws.allow_edit
                 break
 
