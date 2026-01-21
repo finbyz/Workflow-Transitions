@@ -136,7 +136,8 @@ def update_userdetail_workflow(doc, method=None):
     workflow_name = frappe.db.get_value("Workflow", {"document_type": doc.doctype}, "name")
     if not workflow_name:
         frappe.throw(f"No workflow found for {doc.doctype}")
-
+    if not doc.workflow_state:
+        return
     current_state = doc.workflow_state or None
     if not current_state:
         frappe.throw(f"No workflow state found for {doc.doctype} {doc.name}")
