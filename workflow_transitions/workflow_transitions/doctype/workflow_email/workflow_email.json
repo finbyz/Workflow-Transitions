@@ -1,0 +1,108 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "WFE-.YYYY.-.MM.-.####",
+ "creation": "2026-01-30 10:14:40.072152",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "document_type",
+  "is_active",
+  "column_break_bmh2",
+  "based_on",
+  "enable_email_notifications",
+  "section_break_sll4",
+  "workflows",
+  "message",
+  "attach_print_format"
+ ],
+ "fields": [
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Document Type",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "fieldname": "based_on",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Based on ",
+   "options": "\nUser ID\nRole Based",
+   "reqd": 1
+  },
+  {
+   "fieldname": "workflows",
+   "fieldtype": "Table",
+   "label": "Workflow Email ",
+   "options": "Workflow Email Detail"
+  },
+  {
+   "fieldname": "message",
+   "fieldtype": "Code",
+   "ignore_xss_filter": 1,
+   "label": "Message",
+   "options": "Jinja",
+   "reqd": 1
+  },
+  {
+   "fieldname": "attach_print_format",
+   "fieldtype": "Link",
+   "label": "Attach Print Format",
+   "options": "Print Format"
+  },
+  {
+   "fieldname": "column_break_bmh2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_sll4",
+   "fieldtype": "Section Break",
+   "hide_border": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_email_notifications",
+   "fieldtype": "Check",
+   "label": "Enable Email Notifications"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-03 11:22:06.485677",
+ "modified_by": "Administrator",
+ "module": "Workflow Transitions",
+ "name": "Workflow Email",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "track_seen": 1,
+ "track_views": 1
+}
