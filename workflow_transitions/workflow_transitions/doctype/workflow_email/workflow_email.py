@@ -78,18 +78,21 @@ except:
 	pass
 
 if not old_doc:
-	frappe.log_error("No old_doc found", "Workflow Email Debug")
+	# frappe.log_error("No old_doc found", "Workflow Email Debug")
+	# frappe.logger().info("No old_doc found")
 else:
 	old_state = old_doc.get("workflow_state")
 	new_state = doc.get("workflow_state")
 	
-	frappe.log_error(
-		f"State transition: {old_state} -> {new_state}",
-		"Workflow Email Debug"
-	)
+	# frappe.log_error(
+	# 	f"State transition: {old_state} -> {new_state}",
+	# 	"Workflow Email Debug"
+	# )
 	
 	if old_state == new_state:
-		frappe.log_error("States are same, exiting", "Workflow Email Debug")
+		pass
+		# frappe.log_error("States are same, exiting", "Workflow Email Debug")
+		# frappe.logger().info("States are same, exiting")
 	else:
 		# Fetch workflow email rules
 		rules = frappe.get_all(
@@ -102,10 +105,10 @@ else:
 			fields=["name"]
 		)
 		
-		frappe.log_error(
-			f"Found {len(rules)} workflow email rules",
-			"Workflow Email Debug"
-		)
+		# frappe.log_error(
+		# 	f"Found {len(rules)} workflow email rules",
+		# 	"Workflow Email Debug"
+		# )
 		
 		for r in rules:
 			workflow_email = frappe.get_doc("Workflow Email", r.name)
@@ -119,10 +122,10 @@ else:
 				if wf.get("workflow_state") != new_state:
 					continue
 				
-				frappe.log_error(
-					f"Matched workflow state: {new_state}",
-					"Workflow Email Debug"
-				)
+				# frappe.log_error(
+				# 	f"Matched workflow state: {new_state}",
+				# 	"Workflow Email Debug"
+				# )
 				
 				# Conditional check
 				conditional_doctype = wf.get("conditional_doctype")
@@ -185,10 +188,10 @@ else:
 					creator_email = frappe.db.get_value("User", doc.owner, "email")
 					if creator_email:
 						recipients.append(creator_email)
-						frappe.log_error(
-							f"Added document creator email: {creator_email}",
-							"Workflow Email Debug"
-						)
+						# frappe.log_error(
+						# 	f"Added document creator email: {creator_email}",
+						# 	"Workflow Email Debug"
+						# )
 				
 				# Remove duplicates
 				final_recipients = []
@@ -197,16 +200,16 @@ else:
 						final_recipients.append(rcp)
 				
 				if not final_recipients:
-					frappe.log_error(
-						"No valid recipients found",
-						"Workflow Email Debug"
-					)
+					# frappe.log_error(
+					# 	"No valid recipients found",
+					# 	"Workflow Email Debug"
+					# )
 					continue
 				
-				frappe.log_error(
-					f"Sending email to: {final_recipients}",
-					"Workflow Email Debug"
-				)
+				# frappe.log_error(
+				# 	f"Sending email to: {final_recipients}",
+				# 	"Workflow Email Debug"
+				# )
 				
 				# ==========================================================
 				# SEND EMAIL VIA BACKGROUND JOB
@@ -222,16 +225,18 @@ else:
 						recipients=final_recipients
 					)
 					
-					frappe.log_error(
-						"Email queued successfully for: " + str(final_recipients),
-						"Workflow Email Queued"
-					)
+					# frappe.log_error(
+					# 	"Email queued successfully for: " + str(final_recipients),
+					# 	"Workflow Email Queued"
+					# )
 					
 				except Exception as e:
-					frappe.log_error(
-						"Error queueing email: " + str(e),
-						"Workflow Email Queue Error"
-					)
+					pass
+					# frappe.log_error(
+					# 	"Error queueing email: " + str(e),
+					# 	"Workflow Email Queue Error"
+					# )
+					# frappe.logger().info("Error queueing email: " + str(e))
 """
 	
 	return script
@@ -268,19 +273,19 @@ def send_email(workflow_email_name, workflow_state, doctype, docname, recipients
 		doc = frappe.get_doc(doctype, docname)
 		workflow_email = frappe.get_doc("Workflow Email", workflow_email_name)
 	except Exception as e:
-		frappe.log_error(
-			f"Error fetching document or workflow email:\n{str(e)}\n{frappe.get_traceback()}",
-			"Workflow Email Fetch Error"
-		)
+		# frappe.log_error(
+		# 	f"Error fetching document or workflow email:\n{str(e)}\n{frappe.get_traceback()}",
+		# 	"Workflow Email Fetch Error"
+		# )
 		return
-	
+
 	subject = f"{doc.doctype} {doc.name} – {doc.workflow_state}"
 	frappe.logger().info(
 		f"=== Starting Email Send Process ===\n"
 		f"Subject: {subject}\n"
 		f"Recipients: {recipients}"
 	)
-	
+
 	# Render message template with doc context
 	try:
 		if not workflow_email.message:
@@ -289,12 +294,12 @@ def send_email(workflow_email_name, workflow_state, doctype, docname, recipients
 		message = frappe.render_template(workflow_email.message, {"doc": doc})
 		frappe.logger().debug(f"✓ Message rendered successfully. Length: {len(message)}")
 	except Exception as e:
-		frappe.log_error(
-			f"Error rendering message template: {str(e)}\n{frappe.get_traceback()}", 
-			"Workflow Email Error"
-		)
+		# frappe.log_error(
+		# 	f"Error rendering message template: {str(e)}\n{frappe.get_traceback()}", 
+		# 	"Workflow Email Error"
+		# )
 		return
-	
+
 	attachments = []
 	# Check if print format is attached
 	if workflow_email.attach_print_format:
@@ -312,11 +317,12 @@ def send_email(workflow_email_name, workflow_state, doctype, docname, recipients
 			})
 			frappe.logger().debug(f"✓ PDF generated successfully")
 		except Exception as e:
-			frappe.log_error(
-				f"Error generating PDF: {str(e)}\n{frappe.get_traceback()}", 
-				"Workflow Email PDF Error"
-			)
-	
+			# frappe.log_error(
+			# 	f"Error generating PDF: {str(e)}\n{frappe.get_traceback()}", 
+			# 	"Workflow Email PDF Error"
+			# )
+			frappe.logger().info(f"Error generating PDF: {str(e)}")
+
 	try:
 		frappe.sendmail(
 			recipients=recipients,
@@ -329,23 +335,26 @@ def send_email(workflow_email_name, workflow_state, doctype, docname, recipients
 			# Email will be queued and sent by email queue worker
 		)
 		
+		
 		frappe.logger().info(f"✓✓✓ Email sent successfully to {len(recipients)} recipients!")
 		# Also log success to Error Log for tracking
-		frappe.log_error(
-			f"Email sent successfully\n"
-			f"DocType: {doc.doctype}\n"
-			f"Document: {doc.name}\n"
-			f"Recipients: {recipients}\n"
-			f"Subject: {subject}",
-			"Workflow Email Success"
-		)
+		# frappe.log_error(
+		# 	f"Email sent successfully\n"
+		# 	f"DocType: {doc.doctype}\n"
+		# 	f"Document: {doc.name}\n"
+		# 	f"Recipients: {recipients}\n"
+		# 	f"Subject: {subject}",
+		# 	"Workflow Email Success"
+		# )
 		
 	except Exception as e:
-		frappe.log_error(
-			f"CRITICAL ERROR sending email:\n"
-			f"Error: {str(e)}\n"
-			f"Recipients: {recipients}\n"
-			f"Subject: {subject}\n\n"
-			f"Full Traceback:\n{frappe.get_traceback()}", 
-			"Workflow Email Send Error"
-		)
+		frappe.logger().info(f"Email sent failed  ")
+
+		# frappe.log_error(
+		# 	f"CRITICAL ERROR sending email:\n"
+		# 	f"Error: {str(e)}\n"
+		# 	f"Recipients: {recipients}\n"
+		# 	f"Subject: {subject}\n\n"
+		# 	f"Full Traceback:\n{frappe.get_traceback()}", 
+		# 	"Workflow Email Send Error"
+		# )
