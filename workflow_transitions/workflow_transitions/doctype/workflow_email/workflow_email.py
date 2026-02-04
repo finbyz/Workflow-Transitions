@@ -78,6 +78,7 @@ except:
 	pass
 
 if not old_doc:
+	pass
 	# frappe.log_error("No old_doc found", "Workflow Email Debug")
 	# frappe.logger().info("No old_doc found")
 else:
