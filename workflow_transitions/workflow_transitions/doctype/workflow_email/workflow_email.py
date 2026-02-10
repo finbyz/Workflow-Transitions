@@ -70,26 +70,34 @@ def generate_workflow_email_script(workflow_email_doc):
 # WORKFLOW EMAIL TRIGGER - AUTO-GENERATED
 # ==========================================================
 
-# Get old state
-old_doc = None
-try:
-	old_doc = doc.get_doc_before_save()
-except:
-	pass
 
-if not old_doc:
-	pass
-	# frappe.log_error("No old_doc found", "Workflow Email Debug")
-	# frappe.logger().info("No old_doc found")
+# 1. Fetch State Change History
+history = doc.get("state_change") or []
+
+if not history:
+    # First time save, no history yet
+    new_state = doc.workflow_state
+    old_state = "Draft"
+
 else:
-	old_state = old_doc.get("workflow_state")
-	new_state = doc.get("workflow_state")
 	
-	# frappe.log_error(
-	# 	f"State transition: {old_state} -> {new_state}",
-	# 	"Workflow Email Debug"
-	# )
-	
+	try:
+		sorted_history = sorted(history, key=lambda x: int(x.idx or 0))
+	except Exception:
+		# Fallback if idx is missing for some reason
+		sorted_history = history
+
+	# The record being saved right now is the last entry in the sorted list
+	current_entry = sorted_history[-1]
+	new_state = current_entry.workflow_state
+
+	# The previous state is the row before the last one
+	if len(sorted_history) > 1:
+		old_state = sorted_history[-2].workflow_state
+	else:
+		old_state = "Draft"
+
+
 	if old_state == new_state:
 		pass
 		# frappe.log_error("States are same, exiting", "Workflow Email Debug")
