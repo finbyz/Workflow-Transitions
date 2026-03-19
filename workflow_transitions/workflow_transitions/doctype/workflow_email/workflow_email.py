@@ -5,6 +5,7 @@
 
 import frappe
 from frappe.model.document import Document
+import time
 
 
 class WorkflowEmail(Document):
@@ -231,7 +232,8 @@ else:
 						workflow_email=workflow_email,
 						workflow=wf,
 						doc=doc,
-						recipients=final_recipients
+						recipients=final_recipients,
+						new_workflow_state=new_state
 					)
 					
 					# frappe.log_error(
@@ -252,7 +254,7 @@ else:
 
 
 @frappe.whitelist(allow_guest=True)
-def enqueue_workflow_email(workflow_email, workflow, doc, recipients):
+def enqueue_workflow_email(workflow_email, workflow, doc, recipients,new_workflow_state):
 	"""
 	Enqueue email sending to background job to prevent request timeout
 	This function is called from the server script
@@ -266,12 +268,13 @@ def enqueue_workflow_email(workflow_email, workflow, doc, recipients):
 		workflow_state=workflow.get("workflow_state"),
 		doctype=doc.doctype,
 		docname=doc.name,
-		recipients=recipients
+		recipients=recipients,
+		new_workflow_state=new_workflow_state
 	)
 	frappe.logger().info(f"Enqueued workflow email for {doc.doctype} {doc.name} to {len(recipients)} recipients")
 
 
-def send_email(workflow_email_name, workflow_state, doctype, docname, recipients):
+def send_email(workflow_email_name, workflow_state, doctype, docname, recipients,new_workflow_state):
 	"""
 	Send email to recipients with optional PDF attachment
 	This function is called asynchronously from a background job
@@ -300,7 +303,9 @@ def send_email(workflow_email_name, workflow_state, doctype, docname, recipients
 		if not workflow_email.message:
 			frappe.throw("Email message template is empty")
 			
-		message = frappe.render_template(workflow_email.message, {"doc": doc})
+		message = frappe.render_template(workflow_email.message, {"doc": doc,"new_workflow_state":new_workflow_state})
+		frappe.log_error("new_workflow_state in email method",new_workflow_state)
+		
 		frappe.logger().debug(f"✓ Message rendered successfully. Length: {len(message)}")
 	except Exception as e:
 		# frappe.log_error(
