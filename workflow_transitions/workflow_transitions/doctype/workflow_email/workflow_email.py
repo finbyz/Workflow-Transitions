@@ -291,7 +291,7 @@ def send_email(workflow_email_name, workflow_state, doctype, docname, recipients
 		# )
 		return
 
-	subject = f"{doc.doctype} {doc.name} – {doc.workflow_state}"
+	subject = f"{doc.doctype} {doc.name} – {new_workflow_state}"
 	frappe.logger().info(
 		f"=== Starting Email Send Process ===\n"
 		f"Subject: {subject}\n"
