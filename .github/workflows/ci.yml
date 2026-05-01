@@ -1,4 +1,3 @@
-
 name: CI
 
 on:
@@ -104,8 +103,16 @@ jobs:
       - name: Load ERPNext Fixtures
         working-directory: /home/runner/frappe-bench
         run: |
-          bench --site test_site execute erpnext.setup.setup_wizard.setup_wizard.setup_complete \
-            --kwargs '{"company_name":"Test","currency":"INR","country":"India","timezone":"Asia/Kolkata","language":"English","chart_of_accounts":"Standard"}'
+          bench --site test_site execute frappe.client.insert \
+            --args '[{"doctype":"Warehouse Type","name":"Transit"}]'
+          bench --site test_site execute frappe.client.insert \
+            --args '[{"doctype":"Warehouse Type","name":"Finished Goods"}]'
+          bench --site test_site execute frappe.client.insert \
+            --args '[{"doctype":"Warehouse Type","name":"Stores"}]'
+          bench --site test_site execute frappe.client.insert \
+            --args '[{"doctype":"Warehouse Type","name":"Work In Progress"}]'
+          bench --site test_site execute frappe.client.insert \
+            --args '[{"doctype":"Warehouse Type","name":"All"}]'
           bench --site test_site migrate
         env:
           CI: 'Yes'
